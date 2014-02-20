@@ -1,0 +1,8 @@
+Feb. 19, 2014
+ - Added a counting mechanism, so that SNPMeta moves on if it can't fetch
+   GenBank records, for some reason.
+ - Added a routine to split the GenBank IDs into smaller lists, so that we
+   can avoid a 414 (Request string too long) error.
+Feb. 14, 2014
+ - Fixed the way SNPMeta looks for SNPs and XML records to annotate
+   when the -d and --no-blast options are given.

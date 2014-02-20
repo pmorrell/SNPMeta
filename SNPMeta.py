@@ -5,7 +5,7 @@ Annotates from NCBI BLAST records in XML format, or can run BLAST on FASTA
 sequences in a directory (SLOW)
 """
 ###############################################################################
-#   April 24, 2013
+#
 #   Thomas Kono
 #   Saint Paul, MN
 #
@@ -524,13 +524,20 @@ class SNPAnnotation:
 #       FUNCTIONS
 #   These are the functions that do the bulk of the work
 ###############################################################################
+def get_chunks(sequence, size):
+    """Returns a list of lists, effectively splits a big list into a bunch of
+    smaller lists of a certain size. We have to define this fuction because
+    sometimes the URLs get too long to send to NCBI"""
+    return(sequence[p:p+size] for p in xrange(0, len(sequence), size))
+
+
 def get_dir_contents(no_blast):
     """Returns the list of files to work on. Depends on if --no-blast was given
     on the command line."""
     #   If --no-blast was supplied...
     if no_blast:
         #   If --no-blast was specified, operate on files ending in 'xml'
-        suffix = 'blast.xml'
+        suffix = 'xml'
     else:
         #   If not, then we want the FASTA to BLAST them
         suffix = 'fasta'
@@ -768,51 +775,68 @@ def extract_gbinfo(hit_info):
         #   Store as strings, since they have to be sent to NCBI as strings
         starts.append(str(hitstart))
         ends.append(str(hitend))
+    #   This is an unideal workaround, but it should work for now
+    #   If there are more than 20 records to parse, then we could 
     #   Build the query string for NCBI
-    #       Genbank numbers, in the form if ID1,ID2,ID3...
-    query_genbank_ids = ','.join(genbank_ids)
-    #       The start positions
-    query_genbank_start = ','.join(starts)
-    #       The end positions
-    query_genbank_end = ','.join(ends)
     #       We get data from the 'nucleotide' database
     query_db_name = 'nucleotide'
     #       We want data returns as genbank flat file
     query_ret_type = 'gb'
     #       And we want it returned as plain text
     query_ret_mode = 'text'
+    #   Get the chunks that we will query NCBI with
+    #   We choose 20 at a time, that should be reasonable
+    genbank_chunks = get_chunks(genbank_ids, 20)
+    start_chunks = get_chunks(starts, 20)
+    end_chunks = get_chunks(ends, 20)
     #   Actually query NCBI!
     #   Entrez.efetch() forms the proper query and sends it to NCBI's servers
     #   Returns handle to data, which is contatenated genbank records
     #   We wrap this in a try-except block to catch some HTTP errors that
     #   NCBI gives during peak hours. Hopefully this helps
-    success = False
-    while not success:
-        try:
-            handle = Entrez.efetch(db=query_db_name, 
-                        id=query_genbank_ids,
-                        rettype=query_ret_type,
-                        retmode=query_ret_mode,
-                        seq_start=query_genbank_start,
-                        seq_stop=query_genbank_end)
-            success = True
-        except urllib2.HTTPError as e:
-            message = 'Caught ' + str(e.code) + ' - retrying in 5 seconds...\n'
-            sys.stderr.write(message)
-            time.sleep(5)
+    #   We also give a counter, just in case. We don't want to get caught in 
+    #   an infinite loop
+    #   Keep an empty string to append the records to and parse it later
+    records = []
+    for chunk in zip(genbank_chunks, start_chunks, end_chunks):
+        attempts = 0
+        success = False
+        while (not success) or (attempts < 5):
+        #   If we have more than five attempts, then we quit
+            if attempts > 5:
+            #   Return a tuple of None if we weren't able
+            #   to get the data from the servers
+                return(None, None, None)
+            try:
+                handle = Entrez.efetch(db=query_db_name, 
+                            id=','.join(chunk[0]),
+                            rettype=query_ret_type,
+                            retmode=query_ret_mode,
+                            seq_start=','.join(chunk[1]),
+                            seq_stop=','.join(chunk[2]))
+                temp_genbank = SeqIO.parse(handle, 'genbank')
+                records = records + list(temp_genbank)
+                #   wait for a second, to avoid abusing the NCBI servers
+                time.sleep(1)
+                handle.close()
+                success = True
+            except urllib2.HTTPError as e:
+                message = 'Caught ' + str(e.code) + ' - retrying in 5 seconds...\n'
+                sys.stderr.write(message)
+                time.sleep(5)
+            attempts += 1
     #   The parser provied handles this
     #   but we must specify that it is reading a genbank file
-    records = SeqIO.parse(handle, query_ret_type)
+    #records = SeqIO.parse(handle, 'genbank')
     #   We zip it with the hit directions for ease
     #   Put it into a list because SeqIO.parse() returns a generator object
     #   which can only be stepped through once. By putting it into a list,
     #   we can traverse it multiple times.
     dirs_recs = zip(directions, [record for record in records])
-    #   We are now done with the handle to the genbank records
-    handle.close()
     #   An empty tuple for annotated regions, for if there are no annotations
     annotated_regions = ()
-    #   An empty ttuple for related organisms and loci, 
+    annotated_genes = ()
+    #   An empty tuple for related organisms and loci, 
     #   for if there is not a related named gene
     related_locus = ()
     #   Step through our list for the first time...
@@ -864,8 +888,6 @@ def extract_gbinfo(hit_info):
                 related_locus = (genename, organism)
                 #   And again, break once we find one
                 break
-    #   And now, we return the two tuples we have
-    #   (annotation, related organism)
     return(annotated_regions, related_locus, annotated_genes)
 
 def sequence_align(seq, query, frames):
@@ -886,10 +908,10 @@ def sequence_align(seq, query, frames):
     #   If not, then we we need to RC the query sequence
     #   We RC the query, since it would be complicated and 
     #   potentially introduce error to RC the genbank sequence
-    if frames[0] == frames[1]:
-        snp_seq = query.seq
+    if ('-' in str(frames[0]) and '-' not in str(frames[1])) or ('-' in str(frames[1]) and '-' not in str(frames[0])):
+        snp_seq = Seq(query.seq)
     else:
-        snp_seq = query.seq.reverse_complement()
+        snp_seq = Seq(query.seq).reverse_complement()
     #   These are the defaults from the 'Geneious' aligner
     gapopen = 12
     gapextend = 3
@@ -1289,18 +1311,23 @@ for target in file_list:
     if ParsedArgs.directory:
         #   If --no-blast was also specified, then we have to point to the FASTA file
         if ParsedArgs.no_blast:
-            filename = target.replace('.blast.xml', '.fasta')
+            filename = target.replace('.xml', '.fasta')
         #   Now, we have to open the FASTA file
         #   This hits the disk to read the file, but there's not much else we can do
+        else:
+            filename = target
         current_snp.SNPName = SeqIO.read(filename, 'fasta').id
     #   If not, then we have already read the sequence.
     #   We just need to get its name
     else:
         current_snp.SNPName = target.id
+        filename = target
     #   Were we provided with a length? Is it GBS? Illumina format?
-    target, context_len = calculate_context(target, ParsedArgs.directory, ParsedArgs.context_len, ParsedArgs.gbs, ParsedArgs.illumina)
+    context = calculate_context(filename, ParsedArgs.directory, ParsedArgs.context_len, ParsedArgs.gbs, ParsedArgs.illumina)
+    targetseq = context[0]
+    context_len = context[1]
     #   Get the length of the sequence, for quality score purposes
-    query_length = len(target)
+    query_length = len(targetseq)
     #   Are we running BLAST?
     if ParsedArgs.no_blast:
         #   We are not, so we just read in the XML directly
@@ -1320,17 +1347,23 @@ for target in file_list:
         #   If there is a related gene or organism, record that
         if related_locus:
             current_snp.AltGene, current_snp.AltOrg = related_locus
-        #   If there are no annotations, take note
-        if not annotations:
+        #   If there are no annotations, take note. This is an empty tuple,
+        #   which means we were able to download sequences but couldn't find
+        #   any annotations
+        if annotations == ():
             current_snp.Notes = 'No Annotations'
+        #   If annotations is NoneType, then we weren't able to even fetch any
+        #   sequences, so we print a message and move on
+        elif annotations == None:
+            current_snp.Notes = 'Could not fetch GenBank records'
         #   If there are annotations
         else:
             #   Store all the information from the annotations tuple
             current_snp.GenBankID, current_snp.Organism, gb_features, directions = annotations
             #   Use the 'needle' EMBOSS program to build an alignment
-            sequence_align(GENBANK_SEQ, target, directions)
+            sequence_align(GENBANK_SEQ, targetseq, directions)
             #   Get the code for the SNP, position in the alignment, and genbank seq
-            snp_location = get_snp_position(NEEDLE_OUTPUT, target, context_len)
+            snp_location = get_snp_position(NEEDLE_OUTPUT, targetseq, context_len)
             #   And unpack the information into the relevant fields
             current_snp.Ambiguity = snp_location[0]
             current_snp.ContextSeq = snp_location[3]
