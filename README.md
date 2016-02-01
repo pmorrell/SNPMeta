@@ -12,6 +12,7 @@ output for the verbose and [dbSNP](http://www.ncbi.nlm.nih.gov/SNP/)
 formats are also provided in the `Example_Data/` directory.
 
 If you use SNPMeta for published work, please cite the paper below:
+
 Kono TJ, Seth K, Poland JA, Morrell PL (2013) SNPMeta: SNP annotation and SNP
 metadata collection without a reference genome. Mol Ecol Resour
 http://onlinelibrary.wiley.com/doi/10.1111/1755-0998.12183/abstract
