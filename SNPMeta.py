@@ -58,18 +58,21 @@ def main():
     if error_code:
         if error_code == 1:
             parser.print_help()
+            sys.stderr.write('\nError! Some required inputs were not given.\n')
             exit(1)
         elif error_code == 2:
-            print('Email entered is not valid.')
+            sys.stderr.write('Email entered is invalid.\n')
             exit(1)
         elif error_code == 3:
-            print('Contextual sequence length entered is not valid.')
+            sys.stderr.write('Contextual sequence length entered is invalid.\n')
             exit(1)
         elif error_code == 4:
-            print('Directory entered is not readable or does not exist.')
+            sys.stderr.write(
+                'Directory entered is not readable or does not exist.\n')
             exit(1)
         elif error_code == 5:
-            print('FASTA file entered is not a valid FASTA file.')
+            sys.stderr.write(
+                'FASTA file entered is an invalid FASTA file.\n')
             exit(1)
     return
 
