@@ -13,15 +13,7 @@ import re
 import math
 import time
 import subprocess
-import urllib2
 import socket
-
-#   Import argparse
-try:
-    import argparse
-except ImportError:
-    print('This script requires Python >=3.2, or the \'argparse\' library.')
-    exit(1)
 
 #   Import the Biopython libraries
 try:
@@ -53,117 +45,7 @@ except ImportError:
 #   Import package components
 from snpmeta.LookupTables.iupac import IUPAC
 from snpmeta.LookupTables.grantham import GSCORES
-
-###############################################################################
-#       ARGUMENT DEFINITIONS
-#   Define the flags and positional arguments
-#   These are routines defined in the 'argparse' library
-###############################################################################
-#   A description of the program
-DESCR = """A BioPython-based tool to annotate SNPs against a specificed 
-organism. Annotates from NCBI BLAST records in XML format, or can run BLAST 
-on FASTA sequences in a directory (SLOW)"""
-#   Start a new argument parser object
-#   Use our pre-defined usage message and description
-Arguments = argparse.ArgumentParser(description=DESCR, add_help=True)
-#   Add some arguments
-Arguments.add_argument('-o',
-                '--output',
-                metavar='OUTPUT_FILE',
-                type=argparse.FileType('w'),
-                default=sys.stdout,
-                help='File to write annotation information (Default: stdout)')
-#   This is a group of 'required' arguments
-Reqd = Arguments.add_argument_group(title='Required Arguments')
-#   The organism agains which we want to annotate. Defined this way in Genbank
-Arguments.add_argument('-t',
-                '--target-organism',
-                metavar='ORGANISM',
-                action='append',
-                help='The organism(s) against which to annotate.\
-                May be specified multiple times.')
-Arguments.add_argument('-q',
-                '--entrez-query',
-                metavar='ENTREZ_QUERY',
-                help='Entrez query, to limit BLAST hits')
-#   Create a mutually exclusive group for the files to annotate
-#   Only one of the following options is allowed
-#   Set the default to None so that the variable exists and allows
-#   us to check it later
-ToAnnotate = Reqd.add_mutually_exclusive_group()
-#   Either a file...
-ToAnnotate.add_argument('-f',
-                '--fasta-file',
-                metavar='FASTA FILE',
-                default=None,
-                help='A FASTA file containing SNPs to annotate. Mutually exclusive with -d.')
-#   Or a directory
-ToAnnotate.add_argument('-d',
-                '--directory',
-                metavar='DIR',
-                default=None,
-                help='A directory containing FASTA files with SNPs to annotate. Mutually exclusive with -f.')
-LengthArgs = Arguments.add_mutually_exclusive_group()
-LengthArgs.add_argument('-l',
-                '--context-len',
-                metavar='LENGTH',
-                type=int,
-                help='The length of the contextual sequence surrounding the SNP, if the SNP is stored as IUPAC ambiguity.')
-LengthArgs.add_argument('-g',
-                '--gbs',
-                action='store_true',
-                default=False,
-                help='SNP sequences are from GBS, and SNP can occur anywhere in the sequence. (Default: False)')
-LengthArgs.add_argument('-i',
-                '--illumina',
-                action='store_true',
-                default=False,
-                help='SNP sequences are FASTA-formatted, but in the Illumina form, with the query SNP states enclosed by brackets []. (Default: False)')
-Reqd.add_argument('-a',
-                '--email',
-                type=str,
-                help='Email address to send to NCBI for batch queries.')
-
-#   Optional argument if we want to BLAST or not
-Arguments.add_argument('--no-blast',
-                    action='store_true',
-                    default=False,
-                    help='Specify this if BLAST has already been run;\
-                     annotate from pre-existing XML reports (Default: False)')
-#   Optional argument for providing verbose output
-Arguments.add_argument('-v',
-                    '--verbose',
-                    action='store_true',
-                    default=False,
-                    help='Verbose output. Print annotations as tab-delimited\
-                    text with diagnostic messages and information. (Default: False)')
-#   Define a new group for arguments passed to running BLAST from within
-Blast = Arguments.add_argument_group(title='BLAST arguments', 
-                        description='Ignored if --no-blast is specified')
-#   Which BLAST program to use?
-Blast.add_argument('-p',
-                    '--program',
-                    default='blastn',
-                    type=str,
-                    choices=['blastn', 'tblastx'],
-                    help='The BLAST program to use (Default: blastn)')
-#   The E-value cutoff
-Blast.add_argument('-e',
-                    '--evalue',
-                    default='5e-10',
-                    help='Maximum E-value for BLAST hits (Default: 5e-10)')
-#   The maximum number of hits to return
-Blast.add_argument('-m',
-                    '--max-hits',
-                    default=5,
-                    type=int,
-                    help='The number of BLAST records to return (Default: 5)')
-Blast.add_argument('-b',
-                    '--database',
-                    type=str,
-                    help='Path to local BLAST database')
-#   Parse the arguments
-ParsedArgs = Arguments.parse_args()
+from snpmeta.ArgumentHandling import parse_args
 
 def check_arguments(args):
     """A function to check the arguments passed to the script"""
