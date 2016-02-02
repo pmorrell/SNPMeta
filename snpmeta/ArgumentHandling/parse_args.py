@@ -56,7 +56,7 @@ def parse_args():
     context_length = parser.add_mutually_exclusive_group()
     context_length.add_argument(
         '-l',
-        '--contextual-length',
+        '--clen',
         metavar='LENGTH',
         type=int,
         help='The length of the contextual sequence surrounding the SNP, if '
@@ -146,4 +146,4 @@ def parse_args():
 
     #   Then parse the arguments
     parsed_args = parser.parse_args()
-    return(parsed_args)
+    return parsed_args

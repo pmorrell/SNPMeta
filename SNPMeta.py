@@ -46,60 +46,7 @@ except ImportError:
 from snpmeta.LookupTables.iupac import IUPAC
 from snpmeta.LookupTables.grantham import GSCORES
 from snpmeta.ArgumentHandling import parse_args
-
-def check_arguments(args):
-    """A function to check the arguments passed to the script"""
-    #   Convert it to a dictionary
-    arg_dict = args.__dict__
-    #   If all of our "required" arguments are 'None', 
-    #   then we should drop the help message
-    if not arg_dict['fasta_file']\
-    and not arg_dict['directory']\
-    and not arg_dict['email']\
-    or not (arg_dict['context_len'] or arg_dict['gbs'] or arg_dict['illumina']):
-        Arguments.print_help()
-        exit(1)
-    #   We will go through the required arguments one-by-one
-    #   to check for validity. If they are not supplied, then the value
-    #   will be 'None', which evaluates to boolean False.
-    #   In the case of email, we want a valid 'string@string.string' form
-    #   Match things that look like email addresses
-    #   There is potential for non-valid email address to slip though
-    #   Standardized grammar for addresses is in RFC-5322, and is very complex
-    #   Very simple regex that does not capture the allowable complexity
-    elif not arg_dict['email'] \
-    or not re.match('\S+@(\S+\.)+\S', arg_dict['email']):
-        print('Please supply a valid email address for batch query to NCBI!')
-        exit(1)
-    #   Context length, if provided, should be positive, and nonzero
-    if not (arg_dict['context_len'] is None) and (arg_dict['context_len'] <= 0):
-        print('Contextual sequence length should be greater than 0!')
-        exit(1)
-    #   We conditionally check one of the arguments passed 
-    #   First the directory
-    if arg_dict['directory']:
-        try:
-            #   Try to list the contentents of the directory
-            tmp_listing = os.listdir(arg_dict['directory'])
-        #   If the directory does not have read permissions, 
-        #   or does not exist, then it throws an OSError exception
-        except OSError:
-            print('Error - Directory '\
-            +arg_dict['directory']+\
-            ' does not exist, or is not readable.')
-            exit(1)
-    #   Then, the file
-    elif arg_dict['fasta_file']:
-        try:
-            #   Try to get statistics on the supplied file
-            tmp_stats = os.stat(arg_dict['fasta_file'])
-            #   Same thing with the file.
-        except OSError:
-            print('Error - FASTA file '\
-                +arg_dict['fasta_file']+\
-                ' does not exist, or is not readable!')
-            exit(1)
-    return()
+from snpmeta.ArgumentHandling import validate_args
 
 ###############################################################################
 #       CONSTANTS AND STRINGS
