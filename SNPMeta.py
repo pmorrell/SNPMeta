@@ -48,6 +48,32 @@ from snpmeta.LookupTables.grantham import GSCORES
 from snpmeta.ArgumentHandling import parse_args
 from snpmeta.ArgumentHandling import validate_args
 
+
+def main():
+    """Main function."""
+    #   First, parse arguments
+    parser, args = parse_args.parse_args()
+    #   And then validate
+    error_code = validate_args.validate_args(args)
+    if error_code:
+        if error_code == 1:
+            parser.print_help()
+            exit(1)
+        elif error_code == 2:
+            print('Email entered is not valid.')
+            exit(1)
+        elif error_code == 3:
+            print('Contextual sequence length entered is not valid.')
+            exit(1)
+        elif error_code == 4:
+            print('Directory entered is not readable or does not exist.')
+            exit(1)
+        elif error_code == 5:
+            print('FASTA file entered is not a valid FASTA file.')
+            exit(1)
+    return
+
+main()
 ###############################################################################
 #       CONSTANTS AND STRINGS
 ###############################################################################

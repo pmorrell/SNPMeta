@@ -78,7 +78,7 @@ def validate_args(args):
     #       1) Fasta/Directory
     #       2) Context length/GBS/Illumina
     #       3) Email
-    if not (arg_dict['fasta_file'] or arg_dict['directory']):
+    if not (arg_dict['fasta_file'] or arg_dict['dir']):
         return 1
     elif not (arg_dict['clen'] or arg_dict['gbs'] or arg_dict['illumina']):
         return 1
@@ -86,7 +86,7 @@ def validate_args(args):
         return 1
 
     #   Then check the email
-    if not valid_email(arg_dict['email']:
+    if not valid_email(arg_dict['email']):
         return 2
 
     #   If the context length is not valid, return a flag that says to fix the
@@ -99,8 +99,8 @@ def validate_args(args):
             return 3
 
     #   If the directory is not valid, do the same as above
-    if arg_dict['directory']:
-        if not valid_dir(arg_dict['directory']):
+    if arg_dict['dir']:
+        if not valid_dir(arg_dict['dir']):
             return 4
 
     #   Then, the FASTA file
