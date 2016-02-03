@@ -29,6 +29,7 @@ def parse_args():
         '--email',
         metavar='EMAIL',
         type=str,
+        default=None,
         help='E-mail address to send with fetch requests to NCBI.')
 
     #   Add a group for SNP annotation targets, part of required arguments
@@ -70,18 +71,21 @@ def parse_args():
         '--clen',
         metavar='LENGTH',
         type=int,
+        default=None,
         help='The length of the contextual sequence surrounding the SNP, if '
              'the SNP is stored as an IUPAC ambiguity in the FASTA file.')
     context_length_arg.add_argument(
         '-g',
         '--gbs',
         action='store_true',
+        default=False,
         help='SNP sequences are GBS tags, and the SNP can occur anywhere in '
              'the sequence. Default: False.')
     context_length_arg.add_argument(
         '-i',
         '--illumina',
         action='store_true',
+        default=False,
         help='SNP sequences are formatted like FASTA, but the query SNP is '
              'specified as the SNP states enclosed by brackets []. See the '
              'user manual for details on this format. Default: False.')
@@ -143,6 +147,7 @@ def parse_args():
         '--target-organism',
         metavar='ORGANISM',
         action='append',
+        default=None,
         help='The oganism(s) against which to annotate. May be specified '
              'multiple times. If None, then any orgamism will be used as the '
              ' annotation source. Default: None')
