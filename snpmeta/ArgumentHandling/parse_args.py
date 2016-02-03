@@ -126,8 +126,8 @@ def parse_args():
         '-q',
         '--entrez-query',
         default=None,
-        help='Entez query to limit BLAST searches to specific taxon. '
-             'Default: None')
+        help='Entez query to limit BLAST searches to specific taxon. Has no '
+             'effect on local BLAST searches. Default: None')
 
     #   Finally, we specify general SNPMeta options. The user may specify an
     #   output file, target organism(s), a flag for whether or not annotation
