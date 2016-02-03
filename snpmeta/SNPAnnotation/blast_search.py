@@ -5,8 +5,10 @@ import tempfile
 import subprocess
 import time
 from urllib.error import HTTPError
+from Bio import SeqIO
 from Bio.Blast import NCBIWWW
 from Bio.Blast.Applications import NcbiblastnCommandline
+from Bio.Blast.Applications import NcbitblastxCommandline
 
 
 class BlastSearch(object):
@@ -30,6 +32,11 @@ class BlastSearch(object):
             prefix='SNPMeta_BlastOut_',
             suffix='.xml',
             delete=False)
+        self.blastin = tempfile.NamedTemporaryFile(
+            mode='w+t',
+            prefix='SNPMeta_BlastIn_',
+            suffix='.fasta',
+            delete=False)
         return
 
     def build_commandline(self, query):
@@ -40,15 +47,15 @@ class BlastSearch(object):
         #   the command to run.
         command_dict = {
             'blastn': NcbiblastnCommandline(
-                query=query,
+                query=self.blastin.name,
                 out=self.blastout.name,
                 db=self.db,
                 evalue=self.evalue,
                 outfmt=5,
                 num_descriptions=self.maxhits,
-                num_alignments=self.maxhits)
+                num_alignments=self.maxhits),
             'tblastx': NcbitblastxCommandline(
-                query=query,
+                query=self.blastin.name,
                 out=self.blastout.name,
                 db=self.db,
                 evalue=self.evalue,
@@ -57,6 +64,10 @@ class BlastSearch(object):
                 num_alignments=self.maxhits)
             }
         if not self.web:
+            #   Write the contents of the query sequence into the temp FASTA
+            #   file. Unfortunately, command line BLAST only accepts input
+            #   files and not sequences
+            s = SeqIO.write(query, self.blastin, 'fasta')
             self.commandline = command_dict[self.prog]
         return
 
@@ -103,18 +114,18 @@ class BlastSearch(object):
                 except HTTPError as e:
                     #   If we catch an HTTPError, print the error code, and wait
                     #   5 seconds to try again.
-                    s = sys.stderr.write(
-                        'Caught HTTP error '
-                        str(e.code)
-                        ' with reason '
-                        str(e.reason)
+                    sys.stderr.write(
+                        'Caught HTTP error ' +
+                        str(e.code) +
+                        ' with reason ' +
+                        str(e.reason) +
                         '. Retrying in 5 seconds ...\n')
                     time.sleep(5)
                 finally:
                     #   Print a helpful message here about how the web BLAST
                     #   went.
                     if not success:
-                        s = sys.stderr.write(
+                        sys.stderr.write(
                             'Failed to get BLAST results after three tries!\n'
                             'Moving on to next SNP ... \n')
         else:

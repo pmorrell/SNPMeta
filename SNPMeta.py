@@ -79,8 +79,18 @@ def main():
 
     for s in SeqIO.parse(args.fasta_file, 'fasta'):
         anno = SNPAnnotation(s)
+        blast = BlastSearch(
+            args.program,
+            args.evalue,
+            args.max_hits,
+            args.database,
+            args.entrez_query)
+        blast.build_commandline(s)
+        print(blast.commandline)
         print(anno.snp_name, anno.query_seq)
-
+        #   Cleanup our temporary files
+        os.remove(blast.blastin.name)
+        os.remove(blast.blastout.name)
     return
 
 main()
@@ -263,84 +273,6 @@ def setup_env(arguments):
     #   Send back the list of records to be annotated
     return(record_list)
 
-def run_blast(sequence, program, evalue, max_return, database, equery):
-    """Runs BLAST with the parameters given on the command line. Returns a
-    handle to the BLAST results, in XML format."""
-    #   Check the arguments - are we reading a file, or are we reading a SeqRecord?
-    #   Since -f is mutually exclusive with -d, then we only need to check one
-    #   Variable 'directory' will be True if we are reading a directory of SNPs
-#    if directory:
-        #   Read the sequence up as a string
-        #       First, a handle to the FASTA with the sequence
-#        handle = open(sequence, 'r')
-        #       Read and parse the sequence
-#        query = SeqIO.read(handle, 'fasta')
-#        handle.close()
-    #   Else, we are reading a large FASTA, and are being served one record at a time
-#    else:
-#        query = sequence
-    #   Print a message to stderr, to keep track of what's going on
-    sys.stderr.write('Running '+program+' on '+sequence.id+'...')
-    #   Convert Illumina format to regular sequence format
-    #   We split on [ / ] to make a list with four elements
-    #   The middle two are always the query SNP
-#    if illumina:
-#        seq_parts = re.split('[\[|\/|\]]', str(query.seq))
-#        #   We replace it with the ambiguity
-#        for amb, stdnuc in IUPAC.items():
-#            if (seq_parts[1] in stdnuc) and (seq_parts[2] in stdnuc):
-#                snp = amb
-#                break
-#        query.seq = seq_parts[0] + snp + seq_parts[-1]
-    #   If '-b' was supplied, we are running BLAST locally...
-    if database:
-        #   We have to write a temporary file, as local BLAST needs one
-        SeqIO.write(sequence, 'tmp_blast.fasta', 'fasta')
-        blast_command = NcbiblastnCommandline(query='tmp_blast.fasta',
-                                            out='tmp_blast.xml',
-                                            db=database,
-                                            evalue=evalue,
-                                            outfmt=5,
-                                            num_descriptions=max_return,
-                                            num_alignments=max_return)
-        #   Run BLAST
-        subprocess.call(str(blast_command).split())
-        blast_handle = open('tmp_blast.xml', 'r')
-    else:
-        #   Also have to wrap the BLAST command into a try-except
-        success = False
-        while not success:
-            try:
-                #   If there is an Entrez query, we have to build it into the query
-                if equery:
-                    blast_handle = NCBIWWW.qblast(program,
-                                'nr',
-                                sequence.seq,
-                                format_type='XML',
-                                descriptions=max_return,
-                                alignments=max_return,
-                                hitlist_size=max_return,
-                                expect=evalue,
-                                entrez_query=equery)
-                #   If there isn't an Extrez query, then we run BLAST just like this
-                else:
-                #   And now run the search
-                    blast_handle = NCBIWWW.qblast(program,
-                                'nr',
-                                sequence.seq,
-                                format_type='XML',
-                                descriptions=max_return,
-                                alignments=max_return,
-                                hitlist_size=max_return,
-                                expect=evalue)
-                success = True
-            except urllib2.HTTPError as e:
-                sys.stderr.write('Caught' + str(e.code) + ' - retrying in 5 seconds...\n')
-                time.sleep(5)
-    #   Tell the user it is finished
-    sys.stderr.write('Done!\n')
-    #   Return the handle
-    return(blast_handle)
 
 def get_gbnumbers(no_blast, xmlfile):
     """Reads the XML report, extracts query name, Genbank ID, directions.
