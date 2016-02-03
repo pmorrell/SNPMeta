@@ -52,7 +52,7 @@ def valid_fasta(fasta):
         for s in seq_list:
             #   If any sequence of the FASTA file has illegal characters, we
             #   raise and error so that it will get caught as an invalid file
-            if re.match('[^ATCGMRWSKYBDHVN\[\/\]]', s.seq):
+            if re.match('[^ATCGMRWSKYBDHVN\[\/\]]', str(s.seq)):
                 raise ValueError
         return True
     except:
@@ -91,9 +91,9 @@ def validate_args(args):
 
     #   If the context length is not valid, return a flag that says to fix the
     #   length
-    if arg_dict['context_len']:
+    if arg_dict['clen']:
         try:
-            c = int(arg_dict['context_len'])
+            c = int(arg_dict['clen'])
             assert c > 0, 'Negative'
         except (TypeError, AssertionError):
             return 3

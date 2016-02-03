@@ -47,6 +47,8 @@ from snpmeta.LookupTables.iupac import IUPAC
 from snpmeta.LookupTables.grantham import GSCORES
 from snpmeta.ArgumentHandling import parse_args
 from snpmeta.ArgumentHandling import validate_args
+from snpmeta.SNPAnnotation.snp_annotation import SNPAnnotation
+from snpmeta.SNPAnnotation.blast_search import BlastSearch
 
 
 def main():
@@ -74,6 +76,7 @@ def main():
             sys.stderr.write(
                 'FASTA file entered is an invalid FASTA file.\n')
             exit(1)
+
     return
 
 main()
