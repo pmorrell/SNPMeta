@@ -6,7 +6,7 @@ import sys
 from Bio import SeqIO
 
 
-def get_dir_contents(noblast):
+def get_dir_contents(directory, noblast):
     """Returns the list of files to work on. Depends on if --no-blast was given
     on the command line."""
     #   If --no-blast was supplied...
@@ -19,7 +19,7 @@ def get_dir_contents(noblast):
     #   The full path of the directory supplied
     #   We need this since the script looks relative to where it is located
     #   on the disk.
-    full_path = os.path.abspath(os.getcwd())
+    full_path = os.path.abspath(directory)
     #   This is the full directory listing of the current directory, as a list
     file_list = os.listdir(full_path)
     #   Trim the file list by those ending in the proper suffix
@@ -32,8 +32,6 @@ def build_targets(fasta, directory, noblast):
     SeqRecord objects, or a list of XML reports to use for annotation."""
     #   Are we annotating a directory or a single file?
     if directory:
-        #   Change directories into the target
-        os.chdir(directory)
         #   Get the list of files we are going to annotate
         record_list = get_dir_contents(noblast)
         #   Drop a message if the directory is empty
