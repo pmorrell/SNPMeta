@@ -78,11 +78,17 @@ def main():
             args.database,
             args.entrez_query)
         blast.build_commandline(s)
+        genbank = GenBank.GenBankHandler(None)
+        #   Print some things to make sure our classes are doing what they are
+        #   supposed to be doing
         print(blast.commandline)
         print(anno.snp_name, anno.query_seq)
+        print(genbank.genbank_seq.name)
         #   Cleanup our temporary files
         os.remove(blast.blastin.name)
         os.remove(blast.blastout.name)
+        os.remove(genbank.genbank_seq.name)
+        os.remove(genbank.needle_out.name)
     return
 
 main()

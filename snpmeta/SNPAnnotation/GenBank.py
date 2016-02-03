@@ -33,7 +33,7 @@ class GenBankHandler(object):
     gapopen = 12
     gapextend = 3
 
-    def _init__(self, blast):
+    def __init__(self, blast):
         """Initialize the class with the BLAST report."""
         self.blastresults = blast
         self.gb_ids = []
