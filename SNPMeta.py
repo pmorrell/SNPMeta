@@ -71,6 +71,10 @@ def main():
     #   Done checking arguments. Start annotating SNPs.
     for s in setup_env.build_targets(args.fasta_file, args.dir, args.no_blast):
         anno = SNPAnnotation(s)
+        anno.calculate_clen(
+            args.clen,
+            args.gbs,
+            args.illumina)
         blast = BlastSearch(
             args.program,
             args.evalue,
@@ -98,67 +102,6 @@ main()
 #   The email address and tool name to send to NCBI
 Entrez.tool = 'SNPMeta, using BioPython'
 Entrez.email = ParsedArgs.email
-
-#   The name of the temporary file to hold alignments
-NEEDLE_OUTPUT = 'needle_output.txt'
-#   The name of the temporary file to hold the genbank sequence
-GENBANK_SEQ = 'gbseq.fa'
-#   This is taken directly from the argument list
-TARGET_ORGANISMS = ParsedArgs.target_organism
-###############################################################################
-#       FUNCTIONS
-#   These are the functions that do the bulk of the work
-###############################################################################
-
-
-def calculate_context(seq, directory, context_len, gbs, illumina):
-    """Calculates the contextual sequence length of the sequence passed to it, 
-    given that the sequence came from either GBS or Illumina design."""
-    if directory:
-        #   Read the correct FASTA off disk
-        query_seq = SeqIO.read(seq, 'fasta')
-    #   Else, we have been served a record already
-    else:
-        query_seq = seq
-    #   If we are not in the illumina format, then we can just return the 
-    #   length that was provided
-    if not illumina:
-        if context_len:
-            if len(seq) > context_len:
-                if seq[context_len] in IUPAC:
-                    return(query_seq, context_len)
-                elif seq[-(context_len+1)] in IUPAC:
-                    return(query_seq, len(query_seq)-(context_len+1))
-                else:
-                    for index, base in enumerate(query_seq):
-                        if base in IUPAC:
-                            return(query_seq, index)
-            else:
-                for index, base in enumerate(query_seq):
-                    if base in IUPAC:
-                        return(query_seq, index)
-        #   If we are working with GBS, then we take the first SNP found
-        if gbs:
-            for index, base in enumerate(query_seq):
-                if base in IUPAC:
-                    return(query_seq, index)
-    #   We are in illumina format
-    else:
-        #   Just search for the start, since this is the same position where
-        #   the new IUPAC ambiguity will reside
-        offset = re.search('\[', str(query_seq.seq)).start()
-        #   Then build the new sequence.
-        #   We split on [ / ], and the SNP states will always be the middle
-        #   two elements
-        seq_parts = re.split('[\[|\/|\]]', str(query_seq.seq))
-        #   We replace it with the ambiguity
-        for amb, stdnuc in IUPAC.items():
-            if (seq_parts[1] in stdnuc) and (seq_parts[2] in stdnuc):
-                snp = amb
-                break
-        query_seq.seq = seq_parts[0] + snp + seq_parts[-1]
-        #   and now, we return it
-        return(query_seq, offset)
 
 
 def get_snp_position(alignment, sequence, clength):
