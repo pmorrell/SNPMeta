@@ -3,6 +3,8 @@
 
 import tempfile
 import subprocess
+import time
+from urllib.error import HTTPError
 from Bio.Blast import NCBIWWW
 from Bio.Blast.Applications import NcbiblastnCommandline
 
@@ -62,30 +64,51 @@ class BlastSearch(object):
         """Runs BLAST using the given query sequence. Reads the flags set in
         self.web and self.entrez to execute the appropriate command, and returns
         a handle to the XML results."""
+        #   Set the BLAST output handle to None
+        blast_handle = None
         #   If we are running over the web
         if self.web:
-            #   And then, if we are limited by an Entrez query
-            if self.entrez:
-                blast_handle = NCBIWWW.qblast(
-                    self.prog,
-                    'nr',
-                    query.seq,
-                    format_type='XML',
-                    descriptions=self.maxhits,
-                    alignments=self.maxhits,
-                    hitlist_size=self.maxhits,
-                    expect=self.evalue,
-                    entrez_query=self.entrez)
-            else:
-                blast_handle = NCBIWWW.qblast(
-                    self.prog,
-                    'nr',
-                    query.seq,
-                    format_type='XML',
-                    descriptions=self.maxhits,
-                    alignments=self.maxhits,
-                    hitlist_size=self.maxhits,
-                    expect=self.evalue)
+            #   Sometimes, we can fail to execute BLAST over the web, especially
+            #   in times of high traffic. We wrap the web queries in a
+            #   try/except block, and retry if we get an error, up to a max of
+            #   three tries.
+            tries = 0
+            success = False
+            while not (success or tries >= 3):
+                try:
+                    tries += 1
+                    #   And then, if we are limited by an Entrez query
+                    if self.entrez:
+                        blast_handle = NCBIWWW.qblast(
+                            self.prog,
+                            'nr',
+                            query.seq,
+                            format_type='XML',
+                            descriptions=self.maxhits,
+                            alignments=self.maxhits,
+                            hitlist_size=self.maxhits,
+                            expect=self.evalue,
+                            entrez_query=self.entrez)
+                    else:
+                        blast_handle = NCBIWWW.qblast(
+                            self.prog,
+                            'nr',
+                            query.seq,
+                            format_type='XML',
+                            descriptions=self.maxhits,
+                            alignments=self.maxhits,
+                            hitlist_size=self.maxhits,
+                            expect=self.evalue)
+                except HTTPError as e:
+                    #   If we catch an HTTPError, print the error code, and wait
+                    #   5 seconds to try again.
+                    s = sys.stderr.write(
+                        'Caught HTTP error '
+                        str(e.code)
+                        ' with reason '
+                        str(e.reason)
+                        '. Retrying in 5 seconds...\n')
+                    time.sleep(5)
         else:
             #   We are not running over the web, and will execute a local BLAST
             #   command.
