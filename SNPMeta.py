@@ -77,6 +77,10 @@ def main():
                 'FASTA file entered is an invalid FASTA file.\n')
             exit(1)
 
+    for s in SeqIO.parse(args.fasta_file, 'fasta'):
+        anno = SNPAnnotation(s)
+        print(anno.snp_name, anno.query_seq)
+
     return
 
 main()
