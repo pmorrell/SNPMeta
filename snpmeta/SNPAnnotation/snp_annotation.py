@@ -4,6 +4,34 @@
 import datetime
 
 
+#   The verbose table header
+table_header = [
+    'SNPName',
+    'Organism',
+    'GenBankID',
+    'ProteinID',
+    'GeneShortName',
+    'Position',
+    'Downstream',
+    'Upstream',
+    'Silent',
+    'AA1',
+    'AA2',
+    'GranthamScore',
+    'CDSPosition',
+    'Codon1',
+    'Codon2',
+    'AmbiguityCode',
+    'ProductName',
+    'Notes',
+    'RelatedGene',
+    'RelatedOrganism',
+    'ContextSequence',
+    'AlignScore',
+    'DateTime'
+]
+
+
 class SNPAnnotation(object):
     """A class to store and emit the SNP annotation data."""
 

@@ -8,20 +8,9 @@ delimited report. Requires Biopython.
 #   Import standard library modules
 import sys
 import os
-import datetime
-import re
-import math
-import time
-import subprocess
-import socket
 
 #   Import the Biopython libraries
 try:
-    #   To run BLAST on NCBI's servers
-    from Bio.Blast import NCBIWWW
-    #   To run BLAST locally
-    from Bio.Blast.Applications import NcbiblastnCommandline
-    #   To work with NCBI's XML reports
     from Bio.Blast import NCBIXML
     #   To use NCBI's Efetch interface for data retrieval
     from Bio import Entrez
@@ -45,6 +34,7 @@ except ImportError:
 #   Import package components
 from snpmeta.LookupTables.iupac import IUPAC
 from snpmeta.LookupTables.grantham import GSCORES
+from snpmeta.Environment import setup_env
 from snpmeta.ArgumentHandling import parse_args
 from snpmeta.ArgumentHandling import validate_args
 from snpmeta.SNPAnnotation.snp_annotation import SNPAnnotation
@@ -77,7 +67,8 @@ def main():
                 'FASTA file entered is an invalid FASTA file.\n')
             exit(1)
 
-    for s in SeqIO.parse(args.fasta_file, 'fasta'):
+    #   Done checking arguments. Start annotating SNPs.
+    for s in setup_env.build_targets(args.fasta_file, args.dir, args.no_blast):
         anno = SNPAnnotation(s)
         blast = BlastSearch(
             args.program,
@@ -101,69 +92,12 @@ main()
 Entrez.tool = 'SNPMeta, using BioPython'
 Entrez.email = ParsedArgs.email
 
-#   The header of the table output
-TABLE_HEADER = [    'SNPName',
-                    'Organism',
-                    'GenBankID',
-                    'ProteinID',
-                    'GeneShortName',
-                    'Position',
-                    'Downstream',
-                    'Upstream',
-                    'Silent',
-                    'AA1',
-                    'AA2',
-                    'GranthamScore',
-                    'CDSPosition',
-                    'Codon1',
-                    'Codon2',
-                    'AmbiguityCode',
-                    'ProductName',
-                    'Notes',
-                    'RelatedGene',
-                    'RelatedOrganism',
-                    'ContextSequence',
-                    'AlignScore',
-                    'DateTime'
-                ]
 #   The name of the temporary file to hold alignments
 NEEDLE_OUTPUT = 'needle_output.txt'
 #   The name of the temporary file to hold the genbank sequence
 GENBANK_SEQ = 'gbseq.fa'
 #   This is taken directly from the argument list
 TARGET_ORGANISMS = ParsedArgs.target_organism
-#   A class to store the SNP annotation data while the script runs
-class SNPAnnotation:
-    """A class to store the SNP annotation data."""
-    def __init__(self):
-        self.SNPName = '-'
-        self.FiveFlank = '-'
-        self.ThreeFlank = '-'
-        self.Observed = '-'
-        self.Organism = '-'
-        self.GenBankID = '-'
-        self.ProteinID = '-'
-        self.GeneShortName = '-'
-        self.Position = '-'
-        self.ThreeUTR = '-'
-        self.FiveUTR = '-'
-        self.Silent = '-'
-        self.AA1 = '-'
-        self.AA2 = '-'
-        self.Grantham = '-'
-        self.CDSPos = '-'
-        self.Codon1 = '-'
-        self.Codon2 = '-'
-        self.Ambiguity = '-'
-        self.Ancestral = '-'
-        self.Product = '-'
-        self.Notes = '-'
-        self.AltGene = '-'
-        self.AltOrg = '-'
-        self.ContextSeq = '-'
-        self.AlignScore = '-'
-        self.DateTime = '-'
-
 ###############################################################################
 #       FUNCTIONS
 #   These are the functions that do the bulk of the work
@@ -174,26 +108,6 @@ def get_chunks(sequence, size):
     sometimes the URLs get too long to send to NCBI"""
     return(sequence[p:p+size] for p in xrange(0, len(sequence), size))
 
-
-def get_dir_contents(no_blast):
-    """Returns the list of files to work on. Depends on if --no-blast was given
-    on the command line."""
-    #   If --no-blast was supplied...
-    if no_blast:
-        #   If --no-blast was specified, operate on files ending in 'xml'
-        suffix = 'xml'
-    else:
-        #   If not, then we want the FASTA to BLAST them
-        suffix = 'fasta'
-    #   The full path of the directory supplied
-    #   We need this since the script looks relative to where it is located
-    #   on the disk.
-    full_path = os.path.abspath('.')
-    #   This is the full directory listing of the current directory, as a list
-    file_list = os.listdir(full_path)
-    #   Trim the file list by those ending in the proper suffix
-    file_list = [x for x in file_list if x.endswith(suffix)]
-    return(file_list)
 
 def calculate_context(seq, directory, context_len, gbs, illumina):
     """Calculates the contextual sequence length of the sequence passed to it, 
@@ -243,35 +157,6 @@ def calculate_context(seq, directory, context_len, gbs, illumina):
         query_seq.seq = seq_parts[0] + snp + seq_parts[-1]
         #   and now, we return it
         return(query_seq, offset)
-
-def setup_env(arguments):
-    """Sets up the 'environment' of the program - gets a list of SNPs to annotate,
-    either from files, or from records stored in one file. Also sets up printing
-    a table or a dbSNP-compatible report."""
-    #   Are we annotating a directory or a single file?
-    if arguments.directory:
-        #   Change directories into the target
-        os.chdir(arguments.directory)
-        #   Get the list of files we are going to annotate
-        record_list = get_dir_contents(arguments.no_blast)
-        #   Drop a message if the directory is empty
-        #   An empty list evaluates to Boolean False
-        if not record_list:
-            print('No SNPs in this directory!')
-            exit(1)
-    elif arguments.fasta_file:
-        #   Get the generator object for the records in the FASTA file
-        #   We use BioPython's SeqIO.parse() function, which returns
-        #   a generator that spits out one FASTA record at a time
-        record_list = SeqIO.parse(arguments.fasta_file, 'fasta')
-    #   This section only runs if the user supplied the -v flag
-    if arguments.verbose:
-        #   Write the table header
-        arguments.output.write('\t'.join(TABLE_HEADER))
-        #   Add a newline
-        arguments.output.write('\n')
-    #   Send back the list of records to be annotated
-    return(record_list)
 
 
 def get_gbnumbers(no_blast, xmlfile):
