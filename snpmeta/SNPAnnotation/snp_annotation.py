@@ -86,4 +86,5 @@ class SNPAnnotation(object):
 
     def print_tabular(self, out):
         """Print the SNP annotation information in tabular format."""
-        pass
+        print(table_header)
+        return

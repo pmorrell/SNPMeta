@@ -39,7 +39,7 @@ from snpmeta.ArgumentHandling import parse_args
 from snpmeta.ArgumentHandling import validate_args
 from snpmeta.SNPAnnotation.snp_annotation import SNPAnnotation
 from snpmeta.SNPAnnotation.blast_search import BlastSearch
-from snpmeta.SNPAnnotation import GenBank
+from snpmeta.SNPAnnotation.genbank import GenBankHandler
 
 
 def main():
@@ -78,7 +78,7 @@ def main():
             args.database,
             args.entrez_query)
         blast.build_commandline(s)
-        genbank = GenBank.GenBankHandler(None)
+        genbank = GenBankHandler(None)
         #   Print some things to make sure our classes are doing what they are
         #   supposed to be doing
         print(blast.commandline)
