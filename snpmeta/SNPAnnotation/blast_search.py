@@ -99,6 +99,7 @@ class BlastSearch(object):
                             alignments=self.maxhits,
                             hitlist_size=self.maxhits,
                             expect=self.evalue)
+                    success = True
                 except HTTPError as e:
                     #   If we catch an HTTPError, print the error code, and wait
                     #   5 seconds to try again.
@@ -107,8 +108,15 @@ class BlastSearch(object):
                         str(e.code)
                         ' with reason '
                         str(e.reason)
-                        '. Retrying in 5 seconds...\n')
+                        '. Retrying in 5 seconds ...\n')
                     time.sleep(5)
+                finally:
+                    #   Print a helpful message here about how the web BLAST
+                    #   went.
+                    if not success:
+                        s = sys.stderr.write(
+                            'Failed to get BLAST results after three tries!\n'
+                            'Moving on to next SNP ... \n')
         else:
             #   We are not running over the web, and will execute a local BLAST
             #   command.
