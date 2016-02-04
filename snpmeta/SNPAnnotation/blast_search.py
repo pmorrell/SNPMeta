@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """A class to store information related to BLAST searching."""
 
+import sys
 import tempfile
 import subprocess
 import time
@@ -67,7 +68,7 @@ class BlastSearch(object):
             #   Write the contents of the query sequence into the temp FASTA
             #   file. Unfortunately, command line BLAST only accepts input
             #   files and not sequences
-            s = SeqIO.write(query, self.blastin, 'fasta')
+            SeqIO.write(query, self.blastin, 'fasta')
             self.commandline = command_dict[self.prog]
         return
 
@@ -131,6 +132,6 @@ class BlastSearch(object):
         else:
             #   We are not running over the web, and will execute a local BLAST
             #   command.
-            subprocess.call(str(blast_command).split())
+            subprocess.call(str(self.commandline).split())
             blast_handle = open(self.blastout.name, 'r')
         return blast_handle

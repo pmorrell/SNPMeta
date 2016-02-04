@@ -2,12 +2,12 @@
 """A class and functions to handle fetching, parsing, and aligning sequences
 fetched from GenBank."""
 
+import sys
+import time
 import tempfile
 from urllib.error import HTTPError
-from Bio.SeqFeature import SeqFeature
-from Bio import Seq
+from Bio import SeqIO
 from Bio.Emboss.Applications import NeedleCommandline
-from Bio import AlignIO
 from Bio.Blast import NCBIXML
 from Bio import Entrez
 
@@ -16,7 +16,7 @@ def get_chunks(s, k):
     """Break up sequence s into chunks of k size, return a nested list. This is
     just a helper function so we don't send too many GenBank IDs in one request
     to NCBI."""
-    return(s[i:i+size] for i in range(0, len(s), k))
+    return(s[i:i+k] for i in range(0, len(s), k))
 
 
 class GenBankHandler(object):
@@ -33,13 +33,17 @@ class GenBankHandler(object):
     gapopen = 12
     gapextend = 3
 
-    def __init__(self, blast):
+    #   The name of the program that is being used, for NCBI's purposes.
+    Entrez.tool = 'SNPMeta'
+
+    def __init__(self, email, blast):
         """Initialize the class with the BLAST report."""
-        self.blastresults = blast
         self.gb_ids = []
         self.hit_coords = []
         self.hit_directions = []
         self.genbank_records = []
+        self.get_gb_info(blast)
+        Entrez.email = email
         self.genbank_seq = tempfile.NamedTemporaryFile(
             mode='w+t',
             prefix='SNPMeta_GenBankSeq_',
@@ -52,11 +56,11 @@ class GenBankHandler(object):
             delete=False)
         return
 
-    def get_gb_info(self, noblast):
+    def get_gb_info(self, resultshandle):
         """Extracts the GenBank record IDs, the hit positions, and the sequence
         orientations from the BLAST report."""
         #   Start a parser that steps through each record
-        blast_records = NCBIXML.parse(self.blastresults)
+        blast_records = NCBIXML.parse(resultshandle)
         #   List to hold information about our hits
         #   Step through the BLAST records
         for record in blast_records:
@@ -78,7 +82,7 @@ class GenBankHandler(object):
                 self.hit_coords.append(hit_coords)
                 self.hit_directions.append(hit_directions)
         #   Finished with this file
-        blast_output.close()
+        resultshandle.close()
         return
 
     def fetch_gb_records(self):
@@ -86,7 +90,7 @@ class GenBankHandler(object):
         #   Build lists to hold the request ranges for each record
         starts = []
         ends = []
-        for c in hit_coords:
+        for c in self.hit_coords:
             #   We will request ~5kb total, 2.5kb upstream and 2.5k downstream
             #   5kb upstream
             hitstart = min(c) - 2500
@@ -137,7 +141,7 @@ class GenBankHandler(object):
                     sys.stderr.write(
                         'Caught ' +
                         str(e.code) +
-                        ' with reason '+
+                        ' with reason ' +
                         str(e.reason) +
                         '. Retrying in 5 seconds ...\n')
                     time.sleep(5)
@@ -154,15 +158,18 @@ class GenBankHandler(object):
         """Extracts the sequences and annotated regions from the GenBank
         records. Also sets the secondary hit information. Filters based on
         whether records come from target organisms or not."""
-        #   Empty lists to hold the feature annotation information
-        annotated_regions = []
-        annotated_genes = []
+        #   Empty dict to hold the extracted annotation information
+        annotations = {
+            'regions': None,
+            'genes': None,
+            'related': None
+            }
         #   Step through our list for the first time
         #   On this pass, we will only get hits from our target organisms, and
         #   out of those, we will only take the hits with an annotated CDS.
         for d, r in zip(self.hit_directions, self.genbank_records):
             #   We want to extract any genes that may be on the record
-            annotated_genes = [f for f in r.features if f.type == 'gene']
+            annotations['genes'] = [f for f in r.features if f.type == 'gene']
             #   Extract the organism from the info
             organism = r.annotations['organism']
             #   If the user has supplied some target organisms...
@@ -175,7 +182,11 @@ class GenBankHandler(object):
                     if 'CDS' in types:
                         #   Save the name, organism of origin, the features,
                         #   and the direction it hit the genbank record
-                        annotated_regions = [r.name, organism, r.features, d]
+                        annotations['regions'] = (
+                            r.name,
+                            organism,
+                            r.features,
+                            d)
                         #   And save the genbank sequence for later
                         SeqIO.write(r, self.genbank_seq.name, 'fasta')
                         #   We popped the first good one off, so we break
@@ -184,15 +195,14 @@ class GenBankHandler(object):
                 #   If no target organism specifed, we just take the best hit
                 types = [f.type for f in r.features]
                 if 'CDS' in types:
-                    annotated_regions = [r.name, organism, r.features, d]
-                    SeqIO.write(record, self.genbank_seq.name, 'fasta')
+                    annotations['regions'] = (r.name, organism, r.features, d)
+                    SeqIO.write(r, self.genbank_seq.name, 'fasta')
                     break
 
         #   The second pass through the list of hits, where we will find genes
         #   in other similar sequences, in case this information is useful for
         #   interpretation.
-        related = []
-        for d, r in dirs_recs:
+        for d, r in zip(self.hit_directions, self.genbank_records):
             #   Extract the organism in the same way as above
             organism = r.annotations['organism']
             #   Now, we are interested in all the features
@@ -204,13 +214,12 @@ class GenBankHandler(object):
                     #   first does not exist as a key in the features dict.
                     genename = f.qualifiers.get('gene', '-')[0]
                     #   Build a tuple of the related organism information
-                    related = [genename, organism]
+                    annotations['related'] = (genename, organism)
                     #   And again, break once we find one
                     break
         #   Return our information. This will be fed into the SNPAnnotation
         #   class to get estimated functional class.
-        return(annotated_regions, annotated_genes, related)
-
+        return annotations
 
     def align_genbank(self, query, frames):
         """Aligns the chosen GenBank record to the query sequence with the
@@ -218,19 +227,20 @@ class GenBankHandler(object):
         #   First, we check the frames of the hits from the BLAST record. If
         #   they are different, then we have to RC one of the sequences. We
         #   choose to RC the query, since it is much simpler, and will not
-        #   introduce errors.
-        if (('-' in str(frames[0]) and '-' not in str(frames[1])) or
-           ('-' in str(frames[1]) and '-' not in str(frames[0]))):
-            snp_seq = Seq(query.seq)
+        #   introduce errors. The frames are given as integers with the values
+        #   {-3, -2, -1, 1, 2, 3}. If they are the same sign, don't RC, if they
+        #   are not, then RC.
+        if (frames[0] > 0 and frames[1] > 0):
+            snp_seq = query.seq
         else:
-            snp_seq = Seq(query.seq).reverse_complement()
+            snp_seq = query.seq.reverse_complement()
         #   Build the 'needle' command
         needle_cmd = NeedleCommandline(
-            asequence = self.genbank_seq.name,
-            bsequence = 'asis' + str(snp_seq),
-            gapopen = self.gapopen,
-            gapextend = self.gapextend,
-            outfile = self.needle_out.name)
+            asequence=self.genbank_seq.name,
+            bsequence='asis:' + str(snp_seq),
+            gapopen=self.gapopen,
+            gapextend=self.gapextend,
+            outfile=self.needle_out.name)
         #   Run it!
         needle_cmd()
         return
