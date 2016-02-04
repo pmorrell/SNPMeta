@@ -8,6 +8,7 @@ delimited report. Requires Biopython.
 #   Import standard library modules
 import sys
 import os
+import time
 
 #   Try to import the Biopython library
 try:
@@ -17,8 +18,7 @@ except ImportError:
     exit(1)
 
 #   Import package components
-from snpmeta.LookupTables.iupac import IUPAC
-from snpmeta.LookupTables.grantham import GSCORES
+from snpmeta.LookupTables.tabular_header import table_header
 from snpmeta.Environment import setup_env
 from snpmeta.ArgumentHandling import parse_args
 from snpmeta.ArgumentHandling import validate_args
@@ -52,6 +52,10 @@ def main():
             sys.stderr.write(
                 'FASTA file entered is an invalid FASTA file.\n')
             exit(1)
+
+    #   Start writing the output file
+    if args.outfmt == 'tabular':
+        args.output.write('\t'.join(table_header) + '\n')
 
     #   Done checking arguments. Start annotating SNPs.
     for s in setup_env.build_targets(args.fasta_file, args.dir, args.no_blast):
@@ -124,78 +128,23 @@ def main():
         if func_class == 'Coding':
             anno.translate_codons(genbank.genbank_seq.name)
         elif func_class == 'Noncoding':
+            #   Noncoding SNPs are done annotating
             pass
         elif func_class == 'Gap':
+            #   As are SNPs that don't align nicely to the GenBank record
             pass
-
-        print(vars(anno))
+        #   Print the annotation information in the desired format
+        anno.print_annotation(args.output, args.outfmt)
 
         #   Cleanup our temporary files
         os.remove(blast.blastin.name)
         os.remove(blast.blastout.name)
         os.remove(genbank.genbank_seq.name)
         os.remove(genbank.needle_out.name)
+        #   Sleep for 1 second to avoid making requests too quickly
+        time.sleep(1)
+    #   Close the output handle
+    args.output.close()
     return
 
 main()
-
-
-    if ParsedArgs.verbose:
-        current_annotation = [current_snp.SNPName,
-                            current_snp.Organism,
-                            current_snp.GenBankID,
-                            current_snp.ProteinID,
-                            current_snp.GeneShortName,
-                            str(current_snp.Position),
-                            str(current_snp.ThreeUTR),
-                            str(current_snp.FiveUTR),
-                            current_snp.Silent,
-                            current_snp.AA1,
-                            current_snp.AA2,
-                            str(current_snp.Grantham),
-                            str(current_snp.CDSPos),
-                            current_snp.Codon1,
-                            current_snp.Codon2,
-                            current_snp.Ambiguity,
-                            current_snp.Product,
-                            current_snp.Notes,
-                            current_snp.AltGene,
-                            current_snp.AltOrg,
-                            current_snp.ContextSeq,
-                            str(current_snp.AlignScore),
-                            current_snp.DateTime]
-        #   Write it all to the output file
-        ParsedArgs.output.write('\t'.join(current_annotation))
-        #   Put a new line in there
-        ParsedArgs.output.write('\n')
-    else:
-        #   We have to reassign some values here, for the dbSNP report
-        #   namely, the synonymous and nonsynonymous data
-        #   We will start with a list of three empty strings
-        #   and build the comment field out of our information
-        comment = ['', '', '']
-        if str(current_snp.Position) == 'non-coding':
-            comment[0] = 'non-coding'
-        else:
-            comment[1] = current_snp.AA1
-            comment[2] = current_snp.AA2
-            if current_snp.Silent == 'yes':
-                comment[0] = 'synonymous'
-            elif current_snp.Silent == 'no':
-                comment[0] = 'nonsynonymous'
-        current_annotation = [ 'SNP: ' + current_snp.SNPName,
-                            'GENENAME: ' + current_snp.GeneShortName,
-                            'ACCESSION:' + current_snp.GenBankID,
-                            'COMMENT:' + ' '.join(comment),
-                            'SAMPLESIZE: ',
-                            'LENGTH: ?',
-                            '5\'_FLANK: ' + current_snp.FiveFlank,
-                            'OBSERVED: ' + current_snp.Observed,
-                            '3\'_FLANK: ' + current_snp.ThreeFlank,
-                            '||']
-        #   Write out the block, with each entry on a newline
-        ParsedArgs.output.write('\n'.join(current_annotation))
-        #   And one more newline
-        ParsedArgs.output.write('\n')
-    #   Wait a second to keep from overloading NCBI's servers
-    time.sleep(1)

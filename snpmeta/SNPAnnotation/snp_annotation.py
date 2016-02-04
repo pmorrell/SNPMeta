@@ -14,34 +14,6 @@ from Bio import AlignIO
 from Bio.Alphabet.IUPAC import ambiguous_dna
 
 
-#   The verbose table header
-table_header = [
-    'SNPName',
-    'Organism',
-    'GenBankID',
-    'ProteinID',
-    'GeneShortName',
-    'Position',
-    'Downstream',
-    'Upstream',
-    'Silent',
-    'AA1',
-    'AA2',
-    'GranthamScore',
-    'CDSPosition',
-    'Codon1',
-    'Codon2',
-    'AmbiguityCode',
-    'ProductName',
-    'Notes',
-    'RelatedGene',
-    'RelatedOrganism',
-    'ContextSequence',
-    'AlignScore',
-    'DateTime'
-]
-
-
 class SNPAnnotation(object):
     """A class to store and emit the SNP annotation data."""
 
@@ -351,6 +323,63 @@ class SNPAnnotation(object):
                     break
         return
 
-    def print_annotation(self, outfmt, outfile):
+    def print_annotation(self, outhandle, outformat):
         """Print the SNP annotation information."""
-        pass
+        if outformat == 'tabular':
+            towrite = '\t'.join(
+                [
+                    self.snp_name,
+                    self.organism,
+                    self.genbank_id,
+                    self.protein_id,
+                    self.gene_short_name,
+                    str(self.position),
+                    str(self.three_flank),
+                    str(self.five_flank),
+                    self.silent,
+                    self.aa_1,
+                    self.aa_2,
+                    str(self.grantham),
+                    str(self.cds_pos),
+                    self.codon_1,
+                    self.codon_2,
+                    self.amb,
+                    self.product,
+                    self.notes,
+                    self.alt_gene,
+                    self.alt_org,
+                    self.context_seq,
+                    self.align_score,
+                    self.date_time
+                ] + '\n')
+        elif outformat == 'dbsnp':
+            #   We have to reassign some values here, for the dbSNP report
+            #   namely, the synonymous and nonsynonymous data
+            #   We will start with a list of three empty strings
+            #   and build the comment field out of our information
+            comment = ['', '', '']
+            if not self.cds_feat:
+                comment[0] = 'non-coding'
+            else:
+                comment[1] = self.aa_1
+                comment[2] = self.aa_2
+            if self.silent == 'Yes':
+                comment[0] = 'synonymous'
+            elif self.silent == 'No':
+                comment[0] = 'nonsynonymous'
+            fiveflank = len(self.query_seq) - (self.context + 1)
+            threeflank = self.context
+            towrite = '\n'.join(
+                [
+                    'SNP: ' + self.snp_name,
+                    'GENENAME: ' + self.gene_short_name,
+                    'ACCESSION:' + self.genbank_id,
+                    'COMMENT:' + ' '.join(comment),
+                    'SAMPLESIZE:',
+                    'LENGTH: ?',
+                    '5\'_FLANK: ' + str(fiveflank),
+                    'OBSERVED: ' + '/'.join(IUPAC[self.amb]),
+                    '3\'_FLANK: ' + str(threeflank),
+                    '||']) + '\n'
+        outhandle.write(towrite)
+        return
