@@ -14,10 +14,12 @@ alter version numbers.
 - Fixed a reverse-complement logic error.
 - Use temporary files instead of fixed filenames, which can cause problems with
   users' existing files or multiple instances of SNPMeta.
+
 ### Added
 - Debugging messages to keep track of progress. SNPMeta now prints some
   diagnostic messages related to BLAST searching and record fetching.
 - Option to run TBLASTX on local databases.
+
 ### Removed
 - Verbose flag (`-v`). Output format is now specified by the `--outfmt` option.
 
