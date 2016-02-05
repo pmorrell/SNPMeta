@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import time
 from urllib.error import HTTPError
+from urllib.error import URLError
 from Bio import SeqIO
 from Bio.Blast import NCBIWWW
 from Bio.Blast.Applications import NcbiblastnCommandline
@@ -87,8 +88,8 @@ class BlastSearch(object):
             tries = 0
             success = False
             while not (success or tries >= 3):
+                tries += 1
                 try:
-                    tries += 1
                     #   And then, if we are limited by an Entrez query
                     if self.entrez:
                         blast_handle = NCBIWWW.qblast(
@@ -121,6 +122,15 @@ class BlastSearch(object):
                         ' with reason ' +
                         str(e.reason) +
                         '. Retrying in 5 seconds ...\n')
+                    time.sleep(5)
+                except (URLError, ConnectionRefusedError) as e:
+                    #   Sometimes our connection is refused. We handle this by
+                    #   retrying after 5 seconds. The reason for this error is
+                    #   usually that the service that listens on the requested
+                    #   port can't handle the request.
+                    sys.stderr.write(
+                        'Caught URL error, connection refused. Retrying in 5 '
+                        'seconds ...\n')
                     time.sleep(5)
                 finally:
                     #   Print a helpful message here about how the web BLAST

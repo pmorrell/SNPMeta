@@ -351,7 +351,7 @@ class SNPAnnotation(object):
                     self.context_seq,
                     self.align_score,
                     self.date_time
-                ] + '\n')
+                ]) + '\n'
         elif outformat == 'dbsnp':
             #   We have to reassign some values here, for the dbSNP report
             #   namely, the synonymous and nonsynonymous data

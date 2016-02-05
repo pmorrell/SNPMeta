@@ -6,6 +6,7 @@ import sys
 import time
 import tempfile
 from urllib.error import HTTPError
+from urllib.error import URLError
 from Bio import SeqIO
 from Bio.Emboss.Applications import NeedleCommandline
 from Bio.Blast import NCBIXML
@@ -16,7 +17,7 @@ def get_chunks(s, k):
     """Break up sequence s into chunks of k size, return a nested list. This is
     just a helper function so we don't send too many GenBank IDs in one request
     to NCBI."""
-    return(s[i:i+k] for i in range(0, len(s), k))
+    return [s[i:i+k] for i in range(0, len(s), k)]
 
 
 class GenBankHandler(object):
@@ -115,7 +116,12 @@ class GenBankHandler(object):
         #   a handle to concatenated GenBank records. Just like with BLAST
         #   searching, we wrap in try/except/finally with a counter.
         #   Keep an empty string to append the records to and parse it later
+        batch = 1
         for gid, st, en in zip(genbank_chunks, start_chunks, end_chunks):
+            sys.stderr.write(
+                '\n        Requesting batch ' + str(batch) + ' of ' +
+                str(len(genbank_chunks)) + ' (' + str(len(self.gb_ids)) +
+                ' records total)' + '\n')
             tries = 0
             success = False
             while not (success or tries >= 3):
@@ -144,6 +150,15 @@ class GenBankHandler(object):
                         ' with reason ' +
                         str(e.reason) +
                         '. Retrying in 5 seconds ...\n')
+                    time.sleep(5)
+                except (URLError, ConnectionRefusedError) as e:
+                    #   Sometimes our connection is refused. We handle this by
+                    #   retrying after 5 seconds. The reason for this error is
+                    #   usually that the service that listens on the requested
+                    #   port can't handle the request.
+                    sys.stderr.write(
+                        'Caught URL error, connection refused. Retrying in 5 '
+                        'seconds ...\n')
                     time.sleep(5)
                 finally:
                     #   Print out a message if we could not fetch the list of

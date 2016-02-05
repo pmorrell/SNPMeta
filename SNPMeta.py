@@ -98,7 +98,7 @@ def main():
             '    Fetching GenBank records ... ')
         #   Fetch the relevant records
         genbank.fetch_gb_records()
-        sys.stderr.write('Done!\n')
+        sys.stderr.write('    Done!\n')
         #   And extract the regions and annotations
         sys.stderr.write(
             '    Extracting annotation information from GenBank records\n')
