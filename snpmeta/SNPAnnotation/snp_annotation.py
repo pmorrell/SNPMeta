@@ -102,7 +102,7 @@ class SNPAnnotation(object):
             offset = re.search(r'\[', str(self.query_seq)).start()
             #   Build the fixed sequence
             seq_parts = re.split(r'[\[|\/|\]]', str(self.query_seq))
-            for a, nona in IUPAC.iteritems():
+            for a, nona in IUPAC.items():
                 #   Search for the ambiguity that contains the two query SNP
                 #   states, and drop it in
                 if (seq_parts[1] in nona) and (seq_parts[2] in nona):
@@ -317,7 +317,7 @@ class SNPAnnotation(object):
         else:
             self.silent = 'No'
             #   Get Grantham scores for nonsnyonmyous SNPs
-            for m, s in GSCORES.iteritems():
+            for m, s in GSCORES.items():
                 if self.aa_1 in m and self.aa_2 in m:
                     self.grantham = s
                     break
