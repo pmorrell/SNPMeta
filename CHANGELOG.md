@@ -6,6 +6,21 @@ or fundamentally change how the program behaves. Minor version increments
 are small feature additions or bug fixes. Modifications to documentation do not
 alter version numbers.
 
+## 2.0 - 2016-02-05
+### Modified
+- **Transitioned from Python 2 to Python 3.**
+- Reorganized script into modules, flow of data through the script should make
+  more sense now.
+- Fixed a reverse-complement logic error.
+- Use temporary files instead of fixed filenames, which can cause problems with
+  users' existing files or multiple instances of SNPMeta.
+### Added
+- Debugging messages to keep track of progress. SNPMeta now prints some
+  diagnostic messages related to BLAST searching and record fetching.
+- Option to run TBLASTX on local databases.
+### Removed
+- Verbose flag (`-v`). Output format is now specified by the `--outfmt` option.
+
 
 ## Old Changes
 ### 2014-02-19
