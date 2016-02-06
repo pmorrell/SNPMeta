@@ -163,11 +163,11 @@ class GenBankHandler(object):
                 finally:
                     #   Print out a message if we could not fetch the list of
                     #   GenBank records
-                    if not success:
+                    if not success and tries >= 3:
                         sys.stderr.write(
                             'Failed to fetch GenBank records after three '
                             'attempts. Moving on ...\n')
-        return
+        return success
 
     def extract_annotations(self, target):
         """Extracts the sequences and annotated regions from the GenBank

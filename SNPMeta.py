@@ -89,6 +89,8 @@ def main():
         blastresults = blast.run_blast(s)
         #   Move on to next element if we could not get BLAST results
         if not blastresults:
+            sys.stderr.write(
+                '    No BLAST hits! Try less stringent criteria.\n')
             continue
         sys.stderr.write('    Done!\n')
 
@@ -97,7 +99,9 @@ def main():
         sys.stderr.write(
             '    Fetching GenBank records ... ')
         #   Fetch the relevant records
-        genbank.fetch_gb_records()
+        gb_success = genbank.fetch_gb_records()
+        if not gb_success:
+            continue
         sys.stderr.write('    Done!\n')
         #   And extract the regions and annotations
         sys.stderr.write(
@@ -116,7 +120,12 @@ def main():
         #   hit frames from the extracted genbank information
         sys.stderr.write(
             '    Aligning GenBank record and query sequence ... ')
-        genbank.align_genbank(s, gb_annotations['regions'][3])
+        if gb_annotations['regions']:
+            genbank.align_genbank(s, gb_annotations['regions'][3])
+        else:
+            sys.stderr.write(
+                '    No BLAST hits! Try less stringent criteria.\n')
+            continue
         sys.stderr.write('Done!\n')
 
         #   Then use the alignment to calculate the aligned position of the

@@ -135,7 +135,7 @@ class BlastSearch(object):
                 finally:
                     #   Print a helpful message here about how the web BLAST
                     #   went.
-                    if not success:
+                    if not success and tries >= 3:
                         sys.stderr.write(
                             'Failed to get BLAST results after three tries!\n'
                             'Moving on to next SNP ... \n')
