@@ -136,8 +136,10 @@ def main():
         #   If it is coding, get the amino acid states
         if func_class == 'Coding':
             anno.translate_codons(genbank.genbank_seq.name)
-        elif func_class == 'Noncoding':
-            #   Noncoding SNPs are done annotating
+        elif func_class == 'Intronic':
+            anno.notes = 'Intronic'
+        elif func_class == 'Intergenic':
+            #   Intergenic SNPs are done annotating
             pass
         elif func_class == 'Gap':
             #   As are SNPs that don't align nicely to the GenBank record

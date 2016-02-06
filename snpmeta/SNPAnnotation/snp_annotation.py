@@ -226,14 +226,26 @@ class SNPAnnotation(object):
                     self.cds_feat = None
                     self.cds_snp_pos = None
                     self.silent = 'Yes'
-                    up_dist = []
-                    down_dist = []
-                    for p in cds_pos:
-                        up_dist.append(math.fabs(p - self.aligned_pos))
-                        down_dist.append(math.fabs(self.aligned_pos - p))
-                    self.five_flank = str(min(down_dist))
-                    self.three_flank = str(min(up_dist))
-                    return 'Noncoding'
+                    #   The distance from the start of the CDS to the aligned
+                    #   position
+                    up_dist = int(min(cds_pos) - self.aligned_pos)
+                    #   The distance of the aligned position, past the end of
+                    #   the CDS
+                    down_dist = int(self.aligned_pos - max(cds_pos))
+                    #   If the SNP is intronic, both of these will be negative
+                    if up_dist < 0 and down_dist < 0:
+                        return 'Intronic'
+                    elif up_dist < 0 and down_dist > 0:
+                        #   If the upstream distance is negative and the
+                        #   downstream distance is positive, then the SNP is
+                        #   3' of the gene
+                        self.three_flank = down_dist
+                        return 'Intergenic'
+                    elif up_dist > 0 and down_dost < 0:
+                        #   If upstream distance is positive and downstream
+                        #   distance is negative, it is 5' of the gene.
+                        self.five_flank = up_dist
+                        return 'Intergenic'
 
     def translate_codons(self, gbseq):
         """Get the codon that contains the SNP, and translate the two states."""
