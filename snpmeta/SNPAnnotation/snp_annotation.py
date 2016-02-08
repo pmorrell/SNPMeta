@@ -241,7 +241,7 @@ class SNPAnnotation(object):
                         #   3' of the gene
                         self.three_flank = down_dist
                         return 'Intergenic'
-                    elif up_dist > 0 and down_dost < 0:
+                    elif up_dist > 0 and down_dist < 0:
                         #   If upstream distance is positive and downstream
                         #   distance is negative, it is 5' of the gene.
                         self.five_flank = up_dist
