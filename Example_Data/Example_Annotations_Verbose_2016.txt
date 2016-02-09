@@ -1,0 +1,19 @@
+SNPName	Organism	GenBankID	ProteinID	GeneShortName	Position	Downstream	Upstream	Silent	AA1	AA2	GranthamScore	CDSPosition	Codon1	Codon2	AmbiguityCode	ProductName	Notes	RelatedGene	RelatedOrganism	ContextSequence	AlignScore	DateTime
+RIL01_12001_2	Drosophila melanogaster	NM_001300592.1	NP_001287521.1	Bili	2	-	-	Yes	N	N	-	233	AAC	AAT	Y	Band4.1 inhibitor LRP interactor, isoform H	-	Bili	Drosophila melanogaster	-	574.0	2016-02-08 09:36:41
+RIL01_12001_3	Drosophila melanogaster	AE014134.6	AGB92338.1	CG42399	-	-	-	-	-	-	-	-	-	-	R	uncharacterized protein, isoform C	-	PRY	Drosophila melanogaster	-	56.0	2016-02-08 09:37:11
+RIL01_12001_4	Drosophila melanogaster	AE014297.3	AAF56565.1	CG14544	-	1347	-	Yes	-	-	-	-	-	-	Y	uncharacterized protein, isoform A	-	CG14544	Drosophila melanogaster	-	74.0	2016-02-08 09:37:57
+RIL01_12001_5	Drosophila melanogaster	NM_001258883.3	NP_001245812.1	dbr	-	-	271	Yes	-	-	-	-	-	-	R	debra, isoform F	-	dbr	Drosophila melanogaster	-	601.0	2016-02-08 09:51:46
+RIL01_12001_6	Drosophila melanogaster	NM_001258883.3	NP_001245812.1	dbr	-	-	269	Yes	-	-	-	-	-	-	R	debra, isoform F	-	dbr	Drosophila melanogaster	-	601.0	2016-02-08 09:52:56
+RIL01_12001_7	Drosophila melanogaster	AE014134.6	AAF51562.3	net	-	-	2090	Yes	-	-	-	-	-	-	K	net, isoform B	-	net	Drosophila melanogaster	-	66.0	2016-02-08 09:53:18
+RIL01_12001_8	Drosophila melanogaster	AE014134.6	AAF51562.3	net	-	-	1487	Yes	-	-	-	-	-	-	K	net, isoform B	-	net	Drosophila melanogaster	-	61.0	2016-02-08 09:53:50
+RIL01_12001_9	Drosophila melanogaster	AE014134.6	AAO41164.2	CG11023	-	-	-	-	-	-	-	-	-	-	R	uncharacterized protein, isoform C	-	kis	Drosophila melanogaster	-	55.0	2016-02-08 09:55:00
+RIL01_12001_11	Drosophila melanogaster	NM_001298615.1	NP_001285544.1	CG11555	2	-	-	Yes	R	R	-	87	CGT	CGG	K	uncharacterized protein, isoform B	-	CG11555	synthetic construct	-	601.0	2016-02-08 10:10:46
+RIL01_12001_12	Drosophila melanogaster	NM_205884.3	NP_995606.1	Plc21C	2	-	-	Yes	L	L	-	439	CTG	CTA	R	phospholipase C at 21C, isoform C	-	Plc21C	Drosophila melanogaster	-	601.0	2016-02-08 10:11:07
+RIL01_12001_13	Drosophila melanogaster	AE014134.6	AAN10504.1	Sam-S	-	-	-	-	-	-	-	-	-	-	R	S-adenosylmethionine synthetase, isoform J	-	Sam-S	Drosophila melanogaster	-	50.0	2016-02-08 10:11:38
+RIL01_12001_14	Drosophila melanogaster	AE014134.6	AAF51562.3	net	-	-	364	Yes	-	-	-	-	-	-	S	net, isoform B	-	net	Drosophila melanogaster	-	46.0	2016-02-08 10:25:27
+RIL01_12001_15	Drosophila melanogaster	NM_001272902.1	NP_001259831.1	ush	1	-	-	No	G	A	60	778	GGA	GCA	S	u-shaped, isoform E	-	ush	Drosophila melanogaster	-	601.0	2016-02-08 10:26:15
+RIL01_12001_16	Drosophila melanogaster	NM_001272902.1	NP_001259831.1	ush	2	-	-	Yes	E	E	-	788	GAG	GAA	R	u-shaped, isoform E	-	ush	Drosophila melanogaster	-	601.0	2016-02-08 10:42:06
+RIL01_12001_17	Drosophila melanogaster	NM_134687.4	NP_608531.1	Tspo	2	-	-	Yes	A	A	-	62	GCG	GCC	S	translocator protein	-	CG2789	synthetic construct	-	601.0	2016-02-08 10:43:52
+RIL01_12001_18	Drosophila melanogaster	NM_134687.4	NP_608531.1	Tspo	2	-	-	Yes	R	R	-	73	CGT	CGC	Y	translocator protein	-	CG2789	synthetic construct	-	601.0	2016-02-08 10:57:40
+RIL01_12001_28	Drosophila melanogaster	AE014134.6	AAF51569.2	Ir21a	2	-	-	No	Y	*	-	398	TAT	TAA	R	ionotropic receptor 21a	-	l(2)gl	Drosophila melanogaster	-	45.0	2016-02-08 10:58:47
+RIL01_12001_30	Drosophila melanogaster	NM_001144291.2	NP_001137763.2	drongo	2	-	-	Yes	A	A	-	250	GCT	GCA	W	drongo, isoform I	-	drongo	Drosophila melanogaster	-	601.0	2016-02-08 10:59:00
